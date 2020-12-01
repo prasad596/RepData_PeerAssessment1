@@ -8,18 +8,72 @@ output:
 
 ## Loading and preprocessing the data
 
-
+```{r}
+data <- read.csv("activity.csv")
+```
 
 ## What is mean total number of steps taken per day?
 
+```{r}
+totalSteps = aggregate(steps ~ date, data = data, sum, na.rm = TRUE)
+hist(totalSteps$steps, breaks = 20, main="Total number of steps take per day")
+meanSteps <- mean(totalSteps$steps)
+medianSteps <- median(totalSteps$steps)
+```
+
+Mean number of steps takne per day: `round(meanSteps)`
+
+Mean number of steps takne per day: `medianSteps`
 
 
 ## What is the average daily activity pattern?
 
+Average steps by time interval across all days
+
+```{r}
+stepsByInterval <- aggregate(steps ~ interval, data=data, mean, na.rm = TRUE)
+plot(steps ~ interval, data=stepsByInterval, type="l", main="Average steps taken per Interval")
+```
+
+
+```{r}
+maxInterval <- stepsByInterval[which.max(stepsByInterval$steps),1]
+```
+
+The 5-minute interval that, on average, contains the maximum number of steps: `maxInterval`
 
 
 ## Imputing missing values
 
+Create additional column to set mean steps per interval
+
+```{r}
+dataWithMean <- cbind(data, meanSteps = stepsByInterval$steps)
+dataWithNoNA <- data.frame(steps = ifelse(is.na(dataWithMean$steps), dataWithMean$meanSteps, dataWithMean$steps), date = dataWithMean$date, inteval = dataWithMean$interval)
+totalStepsWithNoNA = aggregate(steps ~ date, data = dataWithNoNA, sum)
+hist(totalStepsWithNoNA$steps, breaks = 20, main="Total number of steps take per day")
+meanStepsWithNoNA <- mean(totalStepsWithNoNA$steps)
+medianStepsWithNoNA <- median(totalStepsWithNoNA$steps)
+```
+
+Mean number of steps taken per day with no NA: `round(meanStepsWithNoNA)`
+
+Mean number of steps taken per day with no NA: `medianStepsWithNoNA`
+
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+dataWithNoNA$date <- strptime(dataWithNoNA$date, "%Y-%m-%d")
+dataWithNoNA$weekend <- (weekdays(dataWithNoNA$date) %in% c("Sunday", "Saturday"))
+weekend <- dataWithNoNA[dataWithNoNA$weekend == TRUE,]
+weekday <- dataWithNoNA[dataWithNoNA$weekend == FALSE,]
+weekendSteps <- aggregate(steps ~ inteval, weekend, mean)
+weekdaySteps <- aggregate(steps ~ inteval, weekday, mean)
+par(mfrow=c(1,2))
+plot(steps ~ inteval, data=weekendSteps, type="l", main="Average steps taken per Interval in Weekends")
+plot(steps ~ inteval, data=weekdaySteps, type="l", main="Average steps taken per Interval in Weekdays")
+
+
+```
